@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import speech_recognition as sr
 import google.generativeai as genai
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # Configure generative AI
 genai.configure(api_key="AIzaSyDZ7q5vFZARCv2nShdqnjqE4K7dh3z23PU")
