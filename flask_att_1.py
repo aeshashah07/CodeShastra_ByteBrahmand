@@ -47,7 +47,7 @@ def upload_file():
             # It's an audio file
             audio_file.save(filename)
             result = recognize_speech(filename)
-            return jsonify({'transcription': result})
+            return jsonify({'transcription': result, 'file_type': file_extension})
         else:
             # It's not an audio file
             return jsonify({'error': 'Unsupported file type'})
