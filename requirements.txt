@@ -1,0 +1,9 @@
+click
+fastapi
+uvicorn
+speech_recognition
+pyttsx3
+IPython.display
+IPython.display
+textwrap
+google-generativeai

@@ -7,8 +7,10 @@ from IPython.display import Markdown
 from IPython.display import display
 import textwrap
 import google.generativeai as genai
-genai.configure(api_key="AIzaSyDZ7q5vFZARCv2nShdqnjqE4K7dh3z23PU")
+
+genai.configure(api_key= process.env.API_KEY)
 model = genai.GenerativeModel('gemini-pro')
+
 app = FastAPI()
 
 @app.post("/process_audio")
