@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
+import subprocess
 import speech_recognition as sr
 import google.generativeai as genai
+import os
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # Configure generative AI
 genai.configure(api_key="AIzaSyDZ7q5vFZARCv2nShdqnjqE4K7dh3z23PU")
@@ -36,25 +38,32 @@ def upload_file():
     if audio_file.filename == '':
         return jsonify({'error': 'No selected file'})
 
-    if audio_file:
+    if audio_file and allowed_file(audio_file.filename):
         filename = secure_filename(audio_file.filename)
-        
-        # Extract file extension from the filename
-        file_extension = filename.rsplit('.', 1)[1].lower()
-        
-        # Now you can check the file type based on the extension
-        if file_extension in ['mp3', 'wav', 'ogg']:
-            # It's an audio file
-            audio_file.save(filename)
-            result = recognize_speech(filename)
-            return jsonify({'transcription': result})
-        else:
-            # It's not an audio file
-            return jsonify({'error': 'Unsupported file type'})
-    
+        audio_file.save(filename)
+        converted_filename = convert_to_wav(filename)
+        result = recognize_speech(converted_filename)
+        # Delete the converted file after recognition
+        os.remove(converted_filename)
+        return jsonify({'transcription': result})
+    else:
+        return jsonify({'error': 'Invalid file format'})
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'aac'}
+
+def convert_to_wav(aac_file):
+    wav_file = aac_file.rsplit('.', 1)[0] + '.wav'
+    subprocess.run(['ffmpeg', '-i', aac_file, '-vn', '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', wav_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return wav_file
+
 @app.route('/', methods=['GET'])
 def index():
     return "Hello, World!"
 
-if _name_ == '_main_':
+@app.route('/weather-forecast', methods=['POST'])
+def weather_forecast():
+    
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
