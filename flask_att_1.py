@@ -41,7 +41,7 @@ def upload_file():
         
         # Extract file extension from the filename
         file_extension = filename.rsplit('.', 1)[1].lower()
-        
+        print(file_extension)
         # Now you can check the file type based on the extension
         if file_extension in ['mp3', 'wav', 'ogg']:
             # It's an audio file
