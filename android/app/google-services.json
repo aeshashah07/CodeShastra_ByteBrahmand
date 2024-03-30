@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "539093851056",
+    "project_id": "bytebrahmand-codeshastra",
+    "storage_bucket": "bytebrahmand-codeshastra.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:539093851056:android:917197710e34c9ae21d475",
+        "android_client_info": {
+          "package_name": "com.example.bytebrahmand_codeshastra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq_G1MuzwsIfHWK56x3cOARPbqaTBQwvg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
