@@ -144,7 +144,7 @@ py-cpuinfo==9.0.0
 pyarrow==15.0.0
 pyasn1==0.5.1
 pyasn1-modules==0.3.0
-PyAudio @ file:///C:/Users/Pinky%20Pamecha/Downloads/PyAudio-0.2.11-cp311-cp311-win_amd64.whl#sha256=5092b46bff5d6687db817bde4a71ffc50dd316cc2e490ee81908f0c95ef2644f
+# PyAudio @ file:///C:/Users/Pinky%20Pamecha/Downloads/PyAudio-0.2.11-cp311-cp311-win_amd64.whl#sha256=5092b46bff5d6687db817bde4a71ffc50dd316cc2e490ee81908f0c95ef2644f
 PyAutoGUI==0.9.54
 pycparser==2.21
 pydantic==2.6.1
