@@ -1,12 +1,14 @@
+import io
+from flask import Flask, request, jsonify, send_file
 import requests
-from flask import Flask, request, jsonify
 from datetime import date
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
-def get_data(state, commodity):
+def get_data(state):
     url = 'https://enam.gov.in/web/Liveprice_ctrl/trade_data_list'
-    today = '2024-03-30'
+    today = date.today()
     stateName = state
     payload = {
         'language': 'en',
@@ -15,56 +17,71 @@ def get_data(state, commodity):
         'toDate': today
     }
     response = requests.post(url, data=payload)
-    print(response)
-    data = []
+    # data = []
     if response.status_code == 200:
-        dic = response.json()
-        if dic['status'] == 200:
-            # data.append(dic)
-            for i in dic['data']:
-                if i['modal_price'] != '0' and i['commodity'] == commodity:
-                    data.append(i)
-    return data
-
-@app.route('/get_prices', methods=['GET'])
-def get_prices():
-    state = request.args.get('state')
-    crop = request.args.get('crop')
+        try:
+            dic = response.json()
+            if dic['status'] == 200:
+                data.append(dic)
+                for i in dic['data']:
+                    if i['modal_price']=='0':
+                        continue
+        except ValueError:
+            print("Failed to parse JSON response")
+    else:
+        print("Failed to retrieve the page")
+    # return data
+        
+def plot_prices(regions, prices):
+    non_zero_regions = []
+    non_zero_prices = []
     
-    if not state or not crop:
-        return jsonify({"error": "Both 'state' and 'crop' parameters are required."}), 400
+    for region, price in zip(regions, prices):
+        if price != 0:
+            non_zero_regions.append(region)
+            non_zero_prices.append(price)
+    
+    colormap = plt.cm.Blues
+    normalize = plt.Normalize(vmin=min(non_zero_prices), vmax=max(non_zero_prices))
+    
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(non_zero_regions, non_zero_prices, color=colormap(normalize(non_zero_prices)), edgecolor='white')
+    
+    avg_price = sum(non_zero_prices) / len(non_zero_prices)
+    plt.title(f'Average Price: {avg_price:.2f}', fontsize=16)
+    plt.xlabel('Regions', fontsize=14)
+    plt.ylabel('Price (in Qui)', fontsize=14)
+    plt.xticks(rotation=90, ha='center', fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    
+    plt.tight_layout()
+    img_buf = io.BytesIO()
+    plt.savefig(img_buf, format='png')
+    img_buf.seek(0)
+    
+    plt.close()  # Close the plot to free up resources
+    
+    return img_buf
+  
 
-    # state_data = get_data(state.upper(), crop.upper())
-    crop_data = get_data(state.upper(), crop.upper())
-    # if not state_data:
-    if not crop_data:
-        app.logger.error(f"No data available for the state: {state}")
-        return jsonify({"error": "No data available for the given state."}), 404
-    # print(state_data[0])
-    # print(type(state[0]))
-    # for item in state_data:
-    #     print(item)
-    #     print(type(item))
-    #     print(item.values())
-    #     print(item['commodity'])
-    # crop_data = [item for item in state_data if crop.upper() in item['commodity']]
-    # print(crop_data)
-
-    if not crop_data:
-        app.logger.error(f"No data available for the crop: {crop}")
-        return jsonify({"error": "No data available for the given crop."}), 404
-
-    regions = [entry['apmc'] for entry in crop_data]
-    prices = [float(entry['modal_price']) for entry in crop_data]
-    avg_price = sum(prices) / len(prices)
-
-    return jsonify({
-        "state": state,
-        "crop": crop,
-        "average_price": avg_price,
-        "data": [{"region": region, "price": price} for region, price in zip(regions, prices)]
-    })
+@app.route('/get_prices', methods=['POST'])
+def get_prices():
+    state = request.json.get('state')
+    crop = request.json.get('crop')
+    
+    data = []
+    get_data(state.upper())
+    if data:
+        data1 = [entry for item in data for entry in item['data'] if crop.upper() in entry['commodity'].split()[0]]
+        regions = [entry['apmc'] for entry in data1]
+        prices = [float(entry['modal_price']) for entry in data1]
+        plot_img = plot_prices(regions,prices) 
+        #return jsonify({'regions': regions, 'prices': prices})
+        return send_file(plot_img, mimetype='image/png')
+    else:
+        return jsonify({'error': 'No data available for the given state and crop.'})
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8000)
