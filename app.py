@@ -7,6 +7,15 @@ from flask import Flask, request, jsonify, send_file
 import io
 from datetime import date
 import matplotlib.pyplot as plt
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name="dd8sojc2z",
+    api_key="338671729996749",
+    api_secret="tFdcHu-gYnciJQ3CyXBpPrKCWNE"
+)
+
 
 
 genai.configure(api_key= 'AIzaSyDZ7q5vFZARCv2nShdqnjqE4K7dh3z23PU')
@@ -95,7 +104,10 @@ def get_prices():
             regions = [entry['apmc'] for entry in data1]
             prices = [float(entry['modal_price']) for entry in data1]
             plot_img = plot_prices(regions,prices) 
-            return send_file(plot_img, mimetype='image/png')
+            upload_result = cloudinary.uploader.upload(plot_img, folder="plot_images")
+            plot_img_url = upload_result['secure_url']
+            #return send_file(plot_img, mimetype='image/png')
+            return jsonify({'plot_img_url': plot_img_url})
         else:
             return jsonify({'error': 'No data available for the given state and crop.'})
     except Exception as e:
