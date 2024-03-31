@@ -67,8 +67,6 @@ def weatherForecast():
         data[i]['soil_fertility'] = fert
     
     query = f"List the crops that a farmer with their farm in city {city} with humid weather can grow for the next season, the number of days left for the harvesting season, and 3 tips for irrigation based on the following predicted weather forecast of the next few days: {analysis_data} without any other bullshit"
-
-    print(analysis_data)
     response = model.generate_content(query)
    
     output = {'forecast': analysis_data, 'analysis': response.text}
