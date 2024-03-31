@@ -7,9 +7,14 @@ import 'package:chat_gpt_sdk/chat_gpt_sdk.dart';
 import 'messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'dart:async';
+import 'dart:convert';
 
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
+import 'package:path_provider/path_provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ChatBotWidget extends StatefulWidget {
@@ -24,6 +29,194 @@ class ChatBotWidget extends StatefulWidget {
 enum TtsState { playing, stopped, paused, continued }
 
 class _ChatBotWidgetState extends State<ChatBotWidget> {
+  late stt.SpeechToText _speech;
+  bool _isListening = false;
+  late String _text;
+  late String _filePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+    textEditingController = TextEditingController();
+    scrollController = ScrollController();
+    focusNode = FocusNode();
+    // focusNode.requestFocus();
+    super.initState();
+  }
+
+  Future<void> _startListening() async {
+    if (!_isListening) {
+      await _initRecording();
+      bool available = await _speech.initialize(
+        onStatus: (status) {
+          print('Status: $status');
+        },
+        onError: (error) {
+          print('Error: $error');
+          _stopRecording();
+        },
+      );
+
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (result) {
+            setState(() {
+              _text = result.recognizedWords;
+            });
+          },
+          listenFor: Duration(seconds: 15),
+          localeId: 'en_US',
+          cancelOnError: true,
+          partialResults: true,
+        );
+      } else {
+        setState(() => _isListening = false);
+        print('Speech recognition not available');
+      }
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() {
+        _isListening = false;
+        setState(() {
+          addChat(_text, false);
+        });
+      });
+    }
+
+    if (_filePath != null) {
+      _postAudioFile(_filePath);
+    }
+  }
+
+  Future<void> _initRecording() async {
+    if (!await _hasPermission()) {
+      // Handle the case where the user declines the permission request.
+      return;
+    }
+
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    _filePath = '${appDocDir.path}/recording_$timestamp.wav';
+
+    // Debugging: Print the file path
+    print('File path: $_filePath');
+
+    // Ensure directory exists
+    if (!appDocDir.existsSync()) {
+      appDocDir.createSync(recursive: true);
+    }
+
+    // Create the file
+    File file = File(_filePath);
+    try {
+      if (!file.existsSync()) {
+        file.createSync();
+        print('File created successfully');
+      } else {
+        print('File already exists');
+      }
+    } catch (e) {
+      print('Error creating file: $e');
+    }
+  }
+
+  Future<bool> _hasPermission() async {
+    final stt.SpeechToText speech = stt.SpeechToText();
+    final status = await speech.initialize();
+    return status;
+  }
+
+  Future<void> _postAudioFile(String filePath) async {
+    print("FILEPATH: $filePath");
+    File checkFileType = File(filePath);
+    print("FILETYPE: ${checkFileType.path.split('.').last}");
+    if (filePath == null) {
+      print('File path is null');
+      return;
+    }
+
+    File file = File(filePath);
+    if (!file.existsSync()) {
+      print('File does not exist at path: $filePath');
+      return;
+    }
+
+    Map<String, dynamic> rawBody = {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {"text": _text}
+          ]
+        }
+      ]
+    };
+    var responseRaw = await http.post(
+        Uri.parse(
+            "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=AIzaSyDZ7q5vFZARCv2nShdqnjqE4K7dh3z23PU"),
+        body: jsonEncode(rawBody));
+    print("RESPONSE BODY: ${responseRaw.body}");
+    String finalAnswer = jsonDecode(responseRaw.body)['candidates'][0]
+            ['content']['parts'][0]['text'] ??
+        "Sorry, Didn't understand that. Please try again.";
+    print("FINAL ANSWER: $finalAnswer");
+    setState(() {
+      addChat(finalAnswer ?? "Sorry, Didn't understand that. Please try again.",
+          true);
+    });
+
+    // try {
+    //   var request = http.MultipartRequest(
+    //     'POST',
+    //     Uri.parse('https://codeshastra-bytebrahmand.onrender.com/upload'),
+    //   );
+    //   request.files
+    //       .add(await http.MultipartFile.fromPath('audio_file', filePath));
+
+    //   var response = await request.send();
+
+    //   if (response.statusCode == 200) {
+    //     // Decode response body
+    //     var jsonResponse = await _decodeResponse(response);
+    //     if (jsonResponse != null) {
+    //       String audioUrl = jsonResponse['transcription'];
+    //       print('Response: $jsonResponse');
+    //       setState(() {
+    //         _text = audioUrl;
+    //       });
+    //     }
+    //   } else {
+    //     print(
+    //         'Failed to post audio: ${response.statusCode}  ${response.reasonPhrase}');
+    //   }
+    // } catch (e) {
+    //   print('Error posting audio: $e');
+    // }
+
+    // var response = await http
+    //     .get(Uri.parse("https://codeshastra-bytebrahmand.onrender.com/"));
+    // print("EMPTY API" + response.body);
+  }
+
+  Future<Map<String, dynamic>?> _decodeResponse(
+      http.StreamedResponse response) async {
+    try {
+      // Decode response stream
+      var decodedResponse = await utf8.decodeStream(response.stream);
+
+      // Parse decoded response
+      return jsonDecode(decodedResponse);
+    } catch (e) {
+      print('Error decoding response: $e');
+    }
+  }
+
   bool isTyping = true,
       isBotResponding = false,
       isWaiting = false,
@@ -47,14 +240,14 @@ class _ChatBotWidgetState extends State<ChatBotWidget> {
     ChatBotMessages("Hi, how can I help you?", DateTime.now(), true),
   ];
 
-  @override
-  void initState() {
-    textEditingController = TextEditingController();
-    scrollController = ScrollController();
-    focusNode = FocusNode();
-    focusNode.requestFocus();
-    super.initState();
-  }
+  // @override
+  // void initState() {
+  //   textEditingController = TextEditingController();
+  //   scrollController = ScrollController();
+  //   focusNode = FocusNode();
+  //   focusNode.requestFocus();
+  //   super.initState();
+  // }
 
   @override
   void dispose() {
@@ -236,37 +429,21 @@ class _ChatBotWidgetState extends State<ChatBotWidget> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
+                padding: const EdgeInsets.fromLTRB(8, 10, 0, 8),
                 child: InkWell(
-                  onTap: () {
-                    if (textEditingController.text.isNotEmpty) {
-                      if (mounted)
-                        setState(() {
-                          setDate = true;
-                          isWaiting = true;
-                        });
-                      addChat(textEditingController.text, false);
-                      getResponse(textEditingController.text.trim());
-                      textEditingController.clear();
-                      if (mounted)
-                        setState(() {
-                          setDate = true;
-                          isTyping = false;
-                        });
-                    }
-                  },
+                  onTap: _isListening ? _stopRecording : _startListening,
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
-                    width: 40,
-                    height: 40,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       color: secondaryColorDark,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Center(
                       child: Icon(
-                        Icons.speak,
-                        size: 20,
+                        _isListening ? Icons.stop : Icons.mic,
+                        size: 28,
                         color: Colors.white,
                       ),
                     ),
@@ -295,8 +472,8 @@ class _ChatBotWidgetState extends State<ChatBotWidget> {
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
-                    width: 40,
-                    height: 40,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       color: secondaryColorDark,
                       borderRadius: BorderRadius.circular(20),
@@ -304,7 +481,7 @@ class _ChatBotWidgetState extends State<ChatBotWidget> {
                     child: Center(
                       child: Icon(
                         Icons.send,
-                        size: 20,
+                        size: 28,
                         color: Colors.white,
                       ),
                     ),
@@ -346,7 +523,7 @@ class UserMessage extends StatelessWidget {
                     child: Text(
                       chatBotMessages.message,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 20,
                         fontFamily: "Nunito",
                         //color: R.colors.black,
                       ),
@@ -356,7 +533,7 @@ class UserMessage extends StatelessWidget {
                 Text(
                   DateFormat.jm().format(chatBotMessages.time).toLowerCase(),
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 16,
                     fontFamily: 'Nunito',
                   ),
                 ),
@@ -449,7 +626,7 @@ class BotMessage extends StatelessWidget {
                             //   ),
                             // ),
                             textStyle: TextStyle(
-                              fontSize: 14,
+                              fontSize: 20,
                               fontFamily: "Nunito",
                             ),
                           ),
@@ -461,7 +638,7 @@ class BotMessage extends StatelessWidget {
                   Text(
                     DateFormat.jm().format(chatBotMessages.time).toLowerCase(),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 16,
                       fontFamily: 'Nunito',
                     ),
                   ),

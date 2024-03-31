@@ -1,7 +1,14 @@
+import 'package:bytebrahmand_codeshastra/constants/colors.dart';
+import 'package:bytebrahmand_codeshastra/models/equipment_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Equipments extends StatelessWidget {
-  const Equipments({super.key});
+  EquipmentModel equipmentModel;
+  Equipments({
+    super.key,
+    required this.equipmentModel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +31,8 @@ class Equipments extends StatelessWidget {
                 padding: EdgeInsetsDirectional.fromSTEB(0, 0, 0, 12),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    'https://images.unsplash.com/photo-1607962837359-5e7e89f86776?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2940&q=80',
+                  child: Image.asset(
+                    equipmentModel.image,
                     width: double.infinity,
                     height: 120,
                     fit: BoxFit.cover,
@@ -40,12 +47,12 @@ class Equipments extends StatelessWidget {
                     Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(0, 0, 12, 0),
                       child: Icon(
-                        Icons.fitness_center,
+                        Icons.category,
                         color: Color(0xFF57636C),
                         size: 24,
                       ),
                     ),
-                    Text('Fitness',
+                    Text(AppLocalizations.of(context)!.equipment,
                         style:
                             TextStyle(fontSize: 12, color: Color(0xFF57636C))),
                   ],
@@ -54,20 +61,40 @@ class Equipments extends StatelessWidget {
               Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(8, 0, 0, 0),
                 child: Text(
-                  'The Running Ragamuffins',
+                  equipmentModel.name,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ),
-              Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(8, 4, 0, 0),
-                child: Text(
-                  '216 Members',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF57636C),
+              // Padding(
+              //   padding: EdgeInsetsDirectional.fromSTEB(8, 4, 0, 0),
+              //   child: Text(
+              //     equipmentModel.description,
+              //     style: TextStyle(
+              //       fontSize: 12,
+              //       color: Color(0xFF57636C),
+              //     ),
+              //   ),
+              // ),
+              Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      equipmentModel.price,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStateProperty.all(secondaryColorDark),
+                    ),
                   ),
-                ),
-              ),
+                  SizedBox(
+                    width: 8,
+                  )
+                ],
+              )
             ],
           ),
         ),

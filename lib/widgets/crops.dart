@@ -1,7 +1,9 @@
+import 'package:bytebrahmand_codeshastra/models/crops_model.dart';
 import 'package:flutter/material.dart';
 
 class CropWidget extends StatelessWidget {
-  const CropWidget({super.key});
+  final CropsModel crops;
+  const CropWidget({super.key, required this.crops});
 
   @override
   Widget build(BuildContext context) {
@@ -22,21 +24,13 @@ class CropWidget extends StatelessWidget {
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  color: Color(0x4C4B39EF),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Color(0xFF4B39EF),
-                    width: 2,
-                  ),
-                ),
                 alignment: AlignmentDirectional(0, 0),
                 child: Padding(
                   padding: EdgeInsets.all(2),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Nnx8c2hvZXN8ZW58MHx8MHx8&auto=format&fit=crop&w=800&q=60',
+                    child: Image.asset(
+                      crops.image,
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
@@ -53,7 +47,7 @@ class CropWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'The Key to Starting Every Day Right',
+                        crops.name,
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
@@ -73,7 +67,7 @@ class CropWidget extends StatelessWidget {
                               padding:
                                   EdgeInsetsDirectional.fromSTEB(4, 0, 0, 0),
                               child: Text(
-                                'By Ellen Fraud',
+                                crops.description,
                                 style: TextStyle(
                                   color: Color(0xFF57636C),
                                   fontSize: 14,
@@ -88,16 +82,11 @@ class CropWidget extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.max,
                           children: [
-                            Icon(
-                              Icons.timer_rounded,
-                              color: Color(0xFF57636C),
-                              size: 16,
-                            ),
                             Padding(
                               padding:
                                   EdgeInsetsDirectional.fromSTEB(4, 0, 0, 0),
                               child: Text(
-                                '5 min ',
+                                crops.price,
                                 style: TextStyle(
                                   color: Color(0xFF57636C),
                                   fontSize: 14,
