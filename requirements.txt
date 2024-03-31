@@ -39,7 +39,7 @@ Django==3.2.10
 django-cors-headers==3.8.0
 django-rest-knox==4.2.0
 djangorestframework==3.12.4
-dlib @ file:///C:/Users/Pinky%20Pamecha/Downloads/Dlib_Windows_Python3.x-main/Dlib_Windows_Python3.x-main/dlib-19.24.1-cp311-cp311-win_amd64.whl#sha256=6f1a5ee167975d7952b28e0ce4495f1d9a77644761cf5720fb66d7c6188ae496
+#dlib @ file:///C:/Users/Pinky%20Pamecha/Downloads/Dlib_Windows_Python3.x-main/Dlib_Windows_Python3.x-main/dlib-19.24.1-cp311-cp311-win_amd64.whl#sha256=6f1a5ee167975d7952b28e0ce4495f1d9a77644761cf5720fb66d7c6188ae496
 dm-tree==0.1.8
 EdgeGPT==0.13.2
 executing==2.0.1
